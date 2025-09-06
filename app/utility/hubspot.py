@@ -7,8 +7,9 @@ load_dotenv()
 
 HUBSPOT_API_TOKEN = os.getenv("HUBSPOT_API_TOKEN")
 
-ON_SITE_QUOTE_SCHEDULED_PIPELINE_ID = "953048615"
-QUOTE_SENT_UNOPEN_PIPELINE_ID = "953048616"
+CONSULT_VISIT_SCHEDULED_PIPELINE_ID = "1735909846"
+QUOTE_SENT_PIPELINE_ID = "1735909848"
+QUOTE_ACCEPTED_PIPELINE_ID = "1735909859"
 QUOTE_VIEWED_PIPELINE_ID = "953048617"
 
 def find_hubspot_deal_by_job_uuid(job_uuid):
@@ -130,3 +131,25 @@ def get_deal_details_with_associations(deal_id):
         "contact": contacts[0].get("properties", {})
     }
     return details
+
+
+def update_hubspot_deal(deal_id, properties_to_update):
+    """
+    Generic function to update a HubSpot deal with a dictionary of properties.
+    """
+    url = f"https://api.hubapi.com/crm/v3/objects/deals/{deal_id}"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {HUBSPOT_API_TOKEN}",
+    }
+    payload = {"properties": properties_to_update}
+    try:
+        response = requests.patch(url, headers=headers, json=payload)
+        response.raise_for_status()
+        logging.info(
+            f"Successfully updated HubSpot deal {deal_id} with: {properties_to_update}"
+        )
+        return True
+    except Exception as e:
+        logging.error(f"Error updating HubSpot deal: {e}")
+        return False

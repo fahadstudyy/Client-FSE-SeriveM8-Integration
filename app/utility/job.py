@@ -22,3 +22,22 @@ def update_job_to_unsuccessfull(uuid):
     except Exception as e:
         logging.error(f"Error updating job {uuid} to Work Order: {e}")
         return None
+
+
+def update_job_status_to_work_order(uuid):
+    url = f"https://api.servicem8.com/api_1.0/job/{uuid}.json"
+    headers = {
+        "accept": "application/json",
+        "content-type": "application/json",
+        "X-Api-Key": SERVICEM8_API_KEY,
+    }
+    payload = {"status": "Work Order"}
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response.raise_for_status()
+        logging.info(f"Successfully updated job {uuid} to Work Order.")
+        return response.json()
+    except Exception as e:
+        logging.error(f"Error updating job {uuid} to Work Order: {e}")
+        return None

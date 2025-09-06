@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from app.utility.hubspot import (
     find_hubspot_deal_by_job_uuid,
     update_hubspot_deal_stage,
-    ON_SITE_QUOTE_SCHEDULED_PIPELINE_ID,
+    CONSULT_VISIT_SCHEDULED_PIPELINE_ID,
 )
 
 
@@ -46,6 +46,6 @@ def handle_job_activity(data):
 
         deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
         if deal_id:
-            update_hubspot_deal_stage(deal_id, ON_SITE_QUOTE_SCHEDULED_PIPELINE_ID)
+            update_hubspot_deal_stage(deal_id, CONSULT_VISIT_SCHEDULED_PIPELINE_ID)
         else:
             logging.warning(f"No HubSpot deal found with sm8_job_uuid = {job_uuid}")
