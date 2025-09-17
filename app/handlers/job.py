@@ -5,6 +5,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from app.utility.job import update_job_status_to_work_order
 from app.utility.hubspot import (
+    get_objects_properties,
     update_hubspot_deal,
     update_hubspot_deal_stage,
     QUOTE_SENT_PIPELINE_ID,
@@ -64,6 +65,15 @@ def handle_job_quote_sent(data):
         deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
 
         if deal_id:
+            result = get_objects_properties("deals", [deal_id], ["dealstage"])
+            dealstage = result[0]["properties"].get("dealstage")
+
+            if dealstage != "1735909847":  # Ready to be quoted
+                logging.info(
+                    f"Deal {deal_id} is not in 'Ready to be quoted' stage. No update needed."
+                )
+                return
+
             properties = {}
 
             properties["dealstage"] = QUOTE_SENT_PIPELINE_ID
