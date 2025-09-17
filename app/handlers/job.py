@@ -110,10 +110,17 @@ def handle_sm8_job_quote_accepted(job_uuid):
 def handle_hubspot_job_quote_accepted(data):
     deal_id = data.get("deal_record_id")
     job_id = data.get("sm8_job_id")
+    deal_stage = data.get("dealstage")
     logging.info(f"Handling quote accepted for job: {job_id}")
 
     if not job_id or not deal_id:
         logging.error("Missing job_id or deal_id.")
+        return
+
+    if deal_stage != "1793082865":  # Deposit Paid stage
+        logging.info(
+            f"Deal {deal_id} is not in 'Deposit Paid' stage. No action required."
+        )
         return
 
     sm8_job = get_job(job_id)
