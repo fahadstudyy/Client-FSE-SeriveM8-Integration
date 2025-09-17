@@ -31,10 +31,16 @@ def get_job(uuid):
 
 
 def handle_job_quote_sent(data):
+    # First try to extract from Webhook payload
     entry = data.get("entry", [{}])[0]
     job_uuid = entry.get("uuid")
+
+    # Fallback to sm8_job_id (HubSpot payload)
     if not job_uuid:
-        logging.error("No uuid in Job entry.")
+        job_uuid = data.get("sm8_job_id")
+
+    if not job_uuid:
+        logging.error("No job uuid provided (neither in entry nor sm8_job_id).")
         return
 
     job = get_job(job_uuid)
