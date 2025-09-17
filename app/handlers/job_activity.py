@@ -2,9 +2,10 @@ import os
 import logging
 import requests
 from dotenv import load_dotenv
+from datetime import datetime
 from app.utility.hubspot import (
     find_hubspot_deal_by_job_uuid,
-    update_hubspot_deal_stage,
+    update_hubspot_deal,
     CONSULT_VISIT_SCHEDULED_PIPELINE_ID,
 )
 
@@ -44,8 +45,17 @@ def handle_job_activity(data):
             logging.error("No job_uuid in JobActivity.")
             return
 
+        start_date_str = job_activity.get("start_date")
+        formatted_date = datetime.strptime(
+            start_date_str, "%Y-%m-%d %H:%M:%S"
+        ).strftime("%Y-%m-%d")
+
         deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
         if deal_id:
-            update_hubspot_deal_stage(deal_id, CONSULT_VISIT_SCHEDULED_PIPELINE_ID)
+            properties_to_update = {
+                "consult_visit_date": formatted_date,
+                "dealstage": CONSULT_VISIT_SCHEDULED_PIPELINE_ID,
+            }
+            update_hubspot_deal(deal_id, properties_to_update)
         else:
             logging.warning(f"No HubSpot deal found with sm8_job_uuid = {job_uuid}")
