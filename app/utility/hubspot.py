@@ -11,6 +11,7 @@ CONSULT_VISIT_SCHEDULED_PIPELINE_ID = "1735909846"
 QUOTE_SENT_PIPELINE_ID = "1735909848"
 QUOTE_ACCEPTED_PIPELINE_ID = "1735909859"
 QUOTE_VIEWED_PIPELINE_ID = "953048617"
+CLOSED_WON_PIPELINE_ID = "closedwon"
 
 def find_hubspot_deal_by_job_uuid(job_uuid):
     url = "https://api.hubapi.com/crm/v3/objects/deals/search"

@@ -3,9 +3,11 @@ import logging
 import requests
 from dotenv import load_dotenv
 from datetime import datetime
+from app.handlers.job import get_job
 from app.utility.hubspot import (
     find_hubspot_deal_by_job_uuid,
     update_hubspot_deal,
+    CLOSED_WON_PIPELINE_ID,
     CONSULT_VISIT_SCHEDULED_PIPELINE_ID,
 )
 
@@ -45,6 +47,9 @@ def handle_job_activity(data):
             logging.error("No job_uuid in JobActivity.")
             return
 
+        sm8_job = get_job(job_uuid)
+        sm8_job_status = sm8_job.get("status", "").strip().lower()
+
         start_date_str = job_activity.get("start_date")
         formatted_date = datetime.strptime(
             start_date_str, "%Y-%m-%d %H:%M:%S"
@@ -52,9 +57,19 @@ def handle_job_activity(data):
 
         deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
         if deal_id:
+            if sm8_job_status == "work order":
+                dealstage_id = CLOSED_WON_PIPELINE_ID
+            elif sm8_job_status == "quote":
+                dealstage_id = CONSULT_VISIT_SCHEDULED_PIPELINE_ID
+            else:
+                logging.info(
+                    f"Job status '{sm8_job_status}' does not trigger a dealstage update."
+                )
+                return
+
             properties_to_update = {
                 "consult_visit_date": formatted_date,
-                "dealstage": CONSULT_VISIT_SCHEDULED_PIPELINE_ID,
+                "dealstage": dealstage_id,
             }
             update_hubspot_deal(deal_id, properties_to_update)
         else:

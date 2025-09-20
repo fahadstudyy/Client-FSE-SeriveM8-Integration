@@ -7,7 +7,6 @@ from app.utility.job import update_job_status_to_work_order
 from app.utility.hubspot import (
     get_objects_properties,
     update_hubspot_deal,
-    update_hubspot_deal_stage,
     QUOTE_SENT_PIPELINE_ID,
     QUOTE_ACCEPTED_PIPELINE_ID,
     find_hubspot_deal_by_job_uuid,
@@ -65,22 +64,13 @@ def handle_job_quote_sent(data):
         deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
 
         if deal_id:
-            result = get_objects_properties("deals", [deal_id], ["dealstage"])
-            dealstage = result[0]["properties"].get("dealstage")
-
-            if dealstage != "1735909847":  # Ready to be quoted
-                logging.info(
-                    f"Deal {deal_id} is not in 'Ready to be quoted' stage. No update needed."
-                )
-                return
-
             properties = {}
 
             properties["dealstage"] = QUOTE_SENT_PIPELINE_ID
             if formatted_date:
                 properties["quote_date"] = formatted_date
             if total_amount:
-                properties["amount"] = total_amount
+                properties["amount"] = float(total_amount)
 
             update_hubspot_deal(deal_id, properties)
 
@@ -93,19 +83,25 @@ def handle_job_quote_sent(data):
 def handle_sm8_job_quote_accepted(job_uuid):
     sm8_job = get_job(job_uuid)
     sm8_job_status = sm8_job.get("status", "").strip().lower()
+    total_amount = sm8_job.get("total_invoice_amount")
 
-    if sm8_job_status != "work order":
-        logging.error(f"Skipping {job_uuid}. Job Status is {sm8_job_status}")
-        return
+    if sm8_job_status == "work order":
+        logging.error(f"Job {job_uuid} Status is {sm8_job_status}")
 
-    deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
-    if not deal_id:
-        logging.warning(f"No HubSpot deal found for job_id: {job_uuid}")
-        return
+        deal_id = find_hubspot_deal_by_job_uuid(job_uuid)
+        if not deal_id:
+            logging.warning(f"No HubSpot deal found for job_id: {job_uuid}")
+            return
 
-    logging.info(f"Found deal {deal_id}, updating stage to Quote Accepted.")
-    update_hubspot_deal_stage(deal_id, QUOTE_ACCEPTED_PIPELINE_ID)
+        properties = {}
+        properties["dealstage"] = QUOTE_ACCEPTED_PIPELINE_ID
+        if total_amount:
+            properties["amount"] = float(total_amount)
 
+        logging.info(f"Found deal {deal_id}, updating stage to Quote Accepted.")
+        update_hubspot_deal(deal_id, properties)
+    else:
+        logging.info(f"Job {job_uuid} Status is {sm8_job_status}, no action taken.")
 
 def handle_hubspot_job_quote_accepted(data):
     deal_id = data.get("deal_record_id")
